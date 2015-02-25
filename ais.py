@@ -2,10 +2,12 @@
 ## History:
 ## v0.1 First version
 ## v0.2 Added command naming functions
+## v0.21 minor fix
+## v0.22 Added verify_integrity function
 ##
 
-version = 0.21
-print "Loading..."
+version = 0.22
+print "Loading Alf Image System..."
 import sys, os, Image
 
 formats = {".bmp": "BMP",".gif":"GIF",".jfif":"JPEG",".jpe":"JPEG",".jpg":"JPEG",".jpg":"JPEG",".png":"PNG",".pbm":"PPM",".pgm":"PPM",".ppm":"PPM",".ais":"AIS"}
@@ -45,7 +47,6 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None):
 		print "Saving file as: "+nombre[0]+".ais"
 		ais_file = open(nombre[0]+".ais","w")
 	else:
-		print nombre_destino
 		nombre_destino = nombre_destino.split(".")
 		if nombre_destino[1].lower() != "ais":
 			print "Can't convert image file to image file"
@@ -114,54 +115,93 @@ def comands_arguments():
 	nombre_destino = None
 	Name = False
 	toName = False
+	extra_arguments = {"verify":False,"only-verify":False}
 	for argument in sys.argv[1:]:
+		good_argument = False
 		if contador == 0:
 			argument_line = argument.split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
 				nombre = argument
 				Name = True
+				good_argument = True
 		if contador == 1 and Name:
 			argument_line = argument.split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
 				if argument != nombre:
 					nombre_destino = argument
 					toName = True
+					good_argument = True
+		if argument == "-v" or argument == "verify":
+			extra_arguments["verify"] = True
+			good_argument = True
+		if argument == "-ov" or argument == "only-verify":
+			extra_arguments["only-verify"] = True
+			good_argument = True
+		if not good_argument:
+			print "The argument '"+ argument+ "' it's not a valid argument"
 		contador+=1
 	#if Name and not toName:
 	#	nombre_destino = nombre
-	return nombre,nombre_destino
+	return nombre,nombre_destino,extra_arguments
 
-
-nombre,nombre_destino = comands_arguments()
-
-if nombre == None:
-	nombre = raw_input("Nombre del archivo: ")
-	nombre_destino = raw_input("Nombre del archivo de destino (dejar en blanco para nombre automatico): ")
-	if nombre_destino == "":
-		nombre_destino = None
-if "."+nombre.split(".")[1].lower() not in formats:
-	print "The file is not an image"
-	exit()
-
-if "."+nombre.split(".")[1].lower() != ".ais":
-	imagen_cargada = open_image(nombre)
-	RGB = get_RGB_list(imagen_cargada)
+def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = None, only = False):
+	print "Verifing integrity"
+	if only:
+		image = open_image(nombre)
+		RGB = get_RGB_list(image)
+		dim_imagen = image.size
 	if nombre_destino == None:
-		write_ais_file(nombre, RGB, imagen_cargada.size)
-	else:
-		write_ais_file(nombre, RGB, imagen_cargada.size, nombre_destino)
-else:
-	ais_data,ais_pixels = open_ais_file(nombre)
-	if nombre_destino != None:
-		if nombre_destino.split(".")[1].lower() != "ais":
-			codificacion = formats["."+nombre_destino.split(".")[1]]
+		nombre_destino = nombre
+	ais_data,ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais")
+	print "Name: "+ str(ais_data[2] == nombre)
+	print "Image resolution: "+ str(ais_data[4] == dim_imagen)
+	print "Pixel per pixel verification: "+ str(ais_pixels == RGB)
+	return
+
+print "Load done"
+
+if __name__== "__main__":
+	nombre,nombre_destino,extra_arguments = comands_arguments()
+
+	if extra_arguments["only-verify"]:
+		if nombre and nombre_destino:
+			verify_integrity(nombre,nombre_destino = nombre_destino,only = True)
 		else:
-			print "Can't convert AIS file to AIS file"
-			print "Using predetermined name and format of the AIS file"
-	if nombre_destino == None or nombre_destino.split(".")[1].lower() == "ais":
-		nombre_destino = ais_data[2]
-		codificacion = ais_data[3]
-	create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
+			print "You have to put an name and an destiny name to verify integrity"
+		exit()
+
+	if nombre == None:
+		nombre = raw_input("Filename: ")
+		nombre_destino = raw_input("Destiny filename (leave blank to autoname): ")
+		if nombre_destino == "":
+			nombre_destino = None
+	if "."+nombre.split(".")[1].lower() not in formats:
+		print "The file is not an image"
+		exit()
+
+	if "."+nombre.split(".")[1].lower() != ".ais":
+		imagen_cargada = open_image(nombre)
+		RGB = get_RGB_list(imagen_cargada)
+		if nombre_destino == None:
+			write_ais_file(nombre, RGB, imagen_cargada.size)
+			if extra_arguments["verify"]:
+				verify_integrity(nombre,imagen_cargada.size,RGB)
+		else:
+			write_ais_file(nombre, RGB, imagen_cargada.size, nombre_destino)
+			if extra_arguments["verify"]:
+				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino)
+	else:
+		ais_data,ais_pixels = open_ais_file(nombre)
+		if nombre_destino != None:
+			if nombre_destino.split(".")[1].lower() != "ais":
+				codificacion = formats["."+nombre_destino.split(".")[1]]
+			else:
+				print "Can't convert AIS file to AIS file"
+				print "Using predetermined name and format of the AIS file"
+		if nombre_destino == None or nombre_destino.split(".")[1].lower() == "ais":
+			nombre_destino = ais_data[2]
+			codificacion = ais_data[3]
+		create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
 
 # print tuple(map(int,ais_data[4].split(", "))) == dim_imagen
 # print ais_data[2] == nombre
