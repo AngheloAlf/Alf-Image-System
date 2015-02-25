@@ -4,6 +4,7 @@
 ## v0.2 Added command naming functions
 ##
 
+version = 0.21
 print "Loading..."
 import sys, os, Image
 
@@ -52,8 +53,8 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None):
 			print "If you want to convert image file to image file, use a normal image editor"
 		print "Saving file as: "+nombre_destino[0]+".ais"
 		ais_file = open(nombre_destino[0]+".ais","w")
-	ais_file.write("0.1\n")
-	ais_file.write("Alf Image System v0.1\n")
+	ais_file.write(str(version)+"\n")
+	ais_file.write("Alf Image System v"+str(version)+"\n")
 	ais_file.write(".".join(nombre)+"\n")
 	ais_file.write(formats["."+nombre[1]]+"\n")
 	ais_file.write(str(dim_imagen)[1:-1]+"\n")
@@ -129,6 +130,7 @@ def comands_arguments():
 	#if Name and not toName:
 	#	nombre_destino = nombre
 	return nombre,nombre_destino
+
 
 nombre,nombre_destino = comands_arguments()
 
