@@ -4,9 +4,10 @@
 ## v0.2 Added command naming functions
 ## v0.21 minor fix
 ## v0.22 Added verify_integrity function
+## v0.3 Add encript system
 ##
 
-version = 0.22
+version = 0.3
 print "Loading Alf Image System..."
 import sys, os, Image
 
@@ -41,7 +42,7 @@ def get_RGB_list(imagen, inicio = (0,0), final = (0,0), seccion = False):
 	#pix[x,y] = value # Set the RGBA Value of the image (tuple)
 	return RGB
 
-def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None):
+def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_number = None):
 	nombre = nombre.split(".")
 	if nombre_destino == None:
 		print "Saving file as: "+nombre[0]+".ais"
@@ -55,19 +56,29 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None):
 		print "Saving file as: "+nombre_destino[0]+".ais"
 		ais_file = open(nombre_destino[0]+".ais","w")
 	ais_file.write(str(version)+"\n")
-	ais_file.write("Alf Image System v"+str(version)+"\n")
+	if encript_number == None:
+		ais_file.write("Alf Image System v"+str(version)+"\n")
+	else:
+		ais_file.write("Alf Image System v"+str(version)+"e\n")
 	ais_file.write(".".join(nombre)+"\n")
 	ais_file.write(formats["."+nombre[1]]+"\n")
 	ais_file.write(str(dim_imagen)[1:-1]+"\n")
+	if encript_number != None:
+		print "Encripting"
+		ais_file.write(str(encript_number)+"\n")
 	ais_file.write("ALF\n")
 	for i in RGB:
 		i = str(i)[1:-1]
-		ais_file.write(i)
+		if encript_number == None:
+			ais_file.write(i)
+		else:
+			ais_file.write(encript(i,encript_number))
 		ais_file.write("\n")
 	ais_file.close()
+	print "Save successful"
 	return 
 
-def open_ais_file(nombre):
+def open_ais_file(nombre,decript_number=None):
 	try:
 		print "Loading AIS file: "+nombre
 		ais_file = open(nombre)
@@ -77,12 +88,25 @@ def open_ais_file(nombre):
 	ais_data = []
 	ais_pixels = []
 	inicio = True
+	encripted = False
 	for linea in ais_file:
 		if inicio:
 			ais_data.append(linea.strip())
 			if linea.strip() == "ALF":
+				ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
+				if ais_data[1][-1] == "e":
+					ais_data[5] = int(ais_data[5])
+					encripted = True
 				inicio = False
 			continue
+		if encripted:
+			if decript_number == None:
+				print "Error reading AIS file"
+				exit()
+			if decript_number != ais_data[5]:
+				print "Wrong decript code"
+				exit()
+			linea = de_encript(linea,decript_number)
 		fla = linea.strip().split("), ")
 		rgb_linea = []
 		for iteracion in fla:
@@ -96,7 +120,6 @@ def open_ais_file(nombre):
 			rgb_linea.append(iteracion)
 		ais_pixels.append(rgb_linea)
 	ais_file.close()
-	ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
 	return ais_data,ais_pixels
 
 def create_image_file(nombre,dim_imagen,ais_pixels,codificacion):
@@ -115,9 +138,29 @@ def comands_arguments():
 	nombre_destino = None
 	Name = False
 	toName = False
-	extra_arguments = {"verify":False,"only-verify":False}
+	toencript = False
+	extra_arguments = {"verify":False,"only-verify":False,"do-nothing":False,"encript": None,"only-encript":None}
 	for argument in sys.argv[1:]:
 		good_argument = False
+		if toencript:
+			if extra_arguments["encript"]:
+				try:
+					encript_number = int(argument)
+					if encript_number >= 0:
+						extra_arguments["encript"] = encript_number
+					toencript = False
+					continue
+				except:
+					pass
+			elif extra_arguments["only-encript"]:
+				try:
+					encript_number = int(argument)
+					if encript_number >= 0:
+						extra_arguments["only-encript"] = encript_number
+					toencript = False
+					continue
+				except:
+					pass
 		if contador == 0:
 			argument_line = argument.split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
@@ -137,6 +180,17 @@ def comands_arguments():
 		if argument == "-ov" or argument == "only-verify":
 			extra_arguments["only-verify"] = True
 			good_argument = True
+		if argument == "-no" or argument == "do-nothing" and true():
+			extra_arguments["do-nothing"] = True
+			good_argument = True
+		if argument == "-e" or argument == "encript":
+			extra_arguments["encript"] = True
+			good_argument = True
+			toencript = True
+		if argument == "-oe" or argument == "only-encript":
+			extra_arguments["only-encript"] = True
+			good_argument = True
+			toencript = True
 		if not good_argument:
 			print "The argument '"+ argument+ "' it's not a valid argument"
 		contador+=1
@@ -144,7 +198,19 @@ def comands_arguments():
 	#	nombre_destino = nombre
 	return nombre,nombre_destino,extra_arguments
 
-def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = None, only = False):
+def true():
+	if True:
+		return True 
+	else:
+		return False
+
+def false():
+	if not False:
+		return False
+	else:
+		return True
+
+def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = None, only = False,decript_number = None):
 	print "Verifing integrity"
 	if only:
 		image = open_image(nombre)
@@ -152,20 +218,49 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 		dim_imagen = image.size
 	if nombre_destino == None:
 		nombre_destino = nombre
-	ais_data,ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais")
+	ais_data,ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais",decript_number = decript_number)
 	print "Name: "+ str(ais_data[2] == nombre)
 	print "Image resolution: "+ str(ais_data[4] == dim_imagen)
 	print "Pixel per pixel verification: "+ str(ais_pixels == RGB)
 	return
+
+def encript(linea,cod = 211):
+	coded = []
+	for i in linea:
+		coded.append(str(ord(i)+cod))
+	return ".".join(coded)
+
+def de_encript(linea,cod = 211):
+	decoded = ""
+	for i in linea.split("."):
+		decoded += str(chr(int(i)-cod))
+	return decoded
 
 print "Load done"
 
 if __name__== "__main__":
 	nombre,nombre_destino,extra_arguments = comands_arguments()
 
+	if extra_arguments["do-nothing"]:
+		print "Doing Nothing"
+		exit()
+
+	if extra_arguments["encript"] == True:
+		extra_arguments["encript"] = 211
+	if extra_arguments["only-encript"]== True:
+		extra_arguments["only-encript"] = 211
+
+	if extra_arguments["only-encript"] != None:
+		ais_data,ais_pixels = open_ais_file(nombre,extra_arguments["only-encript"])
+		if ais_data[1][-1] == "e":
+			write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino)
+		else:
+			write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino, encript_number = extra_arguments["only-encript"])
+		exit()
+
 	if extra_arguments["only-verify"]:
 		if nombre and nombre_destino:
-			verify_integrity(nombre,nombre_destino = nombre_destino,only = True)
+			verify_integrity(nombre,nombre_destino = nombre_destino,only = True,decript_number = extra_arguments["encript"])
 		else:
 			print "You have to put an name and an destiny name to verify integrity"
 		exit()
@@ -183,15 +278,15 @@ if __name__== "__main__":
 		imagen_cargada = open_image(nombre)
 		RGB = get_RGB_list(imagen_cargada)
 		if nombre_destino == None:
-			write_ais_file(nombre, RGB, imagen_cargada.size)
+			write_ais_file(nombre, RGB, imagen_cargada.size,encript_number = extra_arguments["encript"])
 			if extra_arguments["verify"]:
-				verify_integrity(nombre,imagen_cargada.size,RGB)
+				verify_integrity(nombre,imagen_cargada.size,RGB,decript_number = extra_arguments["encript"])
 		else:
-			write_ais_file(nombre, RGB, imagen_cargada.size, nombre_destino)
+			write_ais_file(nombre, RGB, imagen_cargada.size,nombre_destino = nombre_destino,encript_number = extra_arguments["encript"])
 			if extra_arguments["verify"]:
-				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino)
+				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])
 	else:
-		ais_data,ais_pixels = open_ais_file(nombre)
+		ais_data,ais_pixels = open_ais_file(nombre,extra_arguments["encript"])
 		if nombre_destino != None:
 			if nombre_destino.split(".")[1].lower() != "ais":
 				codificacion = formats["."+nombre_destino.split(".")[1]]
@@ -203,6 +298,4 @@ if __name__== "__main__":
 			codificacion = ais_data[3]
 		create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
 
-# print tuple(map(int,ais_data[4].split(", "))) == dim_imagen
-# print ais_data[2] == nombre
-# print ais_pixels == RGB
+#E.O.F End of file
