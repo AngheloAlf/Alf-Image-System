@@ -1,19 +1,33 @@
+## Alf random image system :D
+
 from ais import *
 import random
 import sys
 
+x,y = None,None
 ais_file = open("Random.ais","w")
 ais_file.write(str(version)+"\n")
-ais_file.write("Alf Image System v"+str(version)+"\n")
+ais_file.write("Alf Random Image System v"+str(version)+"\n")
 ais_file.write("Random.png"+"\n")
 ais_file.write("PNG"+"\n")
-if len(sys.argv)>2:
-	x,y = sys.argv[1],sys.argv[2]
-else:
+for i in sys.argv[1:]:
+	if i[0:2] == "-x":
+		try:
+			x = str(int(i[2:]))
+		except:
+			print "Invalid x value"
+	if i[0:2] == "-y":
+		try:
+			y = str(int(i[2:]))
+		except:
+			print "Invalid y value"
+if not x:
 	x = raw_input("x: ")
+if not y:
 	y = raw_input("y: ")
 ais_file.write(x+", "+y+"\n")
 ais_file.write("ALF\n")
+print "Making Random Image "+x+"*"+y
 x = int(x)
 y = int(y)
 porcen = 0

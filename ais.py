@@ -1,13 +1,15 @@
 ## Alf Image System
+##
 ## History:
 ## v0.1 First version
 ## v0.2 Added command naming functions
 ## v0.21 minor fix
 ## v0.22 Added verify_integrity function
 ## v0.3 Add encript system
+## v0.31 best command line encript system
 ##
 
-version = 0.3
+version = 0.31
 print "Loading Alf Image System..."
 import sys, os, Image
 
@@ -138,29 +140,9 @@ def comands_arguments():
 	nombre_destino = None
 	Name = False
 	toName = False
-	toencript = False
 	extra_arguments = {"verify":False,"only-verify":False,"do-nothing":False,"encript": None,"only-encript":None}
 	for argument in sys.argv[1:]:
 		good_argument = False
-		if toencript:
-			if extra_arguments["encript"]:
-				try:
-					encript_number = int(argument)
-					if encript_number >= 0:
-						extra_arguments["encript"] = encript_number
-					toencript = False
-					continue
-				except:
-					pass
-			elif extra_arguments["only-encript"]:
-				try:
-					encript_number = int(argument)
-					if encript_number >= 0:
-						extra_arguments["only-encript"] = encript_number
-					toencript = False
-					continue
-				except:
-					pass
 		if contador == 0:
 			argument_line = argument.split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
@@ -183,19 +165,33 @@ def comands_arguments():
 		if argument == "-no" or argument == "do-nothing" and true():
 			extra_arguments["do-nothing"] = True
 			good_argument = True
-		if argument == "-e" or argument == "encript":
-			extra_arguments["encript"] = True
+		if argument[0:2] == "-e":
+			if len(argument)>2:
+				extra_arguments["encript"] = int(argument[2:])
+			else:
+				extra_arguments["encript"] = True
 			good_argument = True
-			toencript = True
-		if argument == "-oe" or argument == "only-encript":
-			extra_arguments["only-encript"] = True
+		if argument[0:7] == "encript":
+			if len(argument)>7:
+				extra_arguments["encript"] = int(argument[7:])
+			else:
+				extra_arguments["encript"] = True
 			good_argument = True
-			toencript = True
+		if argument[0:3] == "-oe":
+			if len(argument)>3:
+				extra_arguments["only-encript"] = int(argument[3:])
+			else:
+				extra_arguments["only-encript"] = True
+			good_argument = True
+		if argument == "only-encript":
+			if len(argument)>12:
+				extra_arguments["only-encript"] = int(argument[12:])
+			else:
+				extra_arguments["only-encript"] = True
+			good_argument = True
 		if not good_argument:
 			print "The argument '"+ argument+ "' it's not a valid argument"
 		contador+=1
-	#if Name and not toName:
-	#	nombre_destino = nombre
 	return nombre,nombre_destino,extra_arguments
 
 def true():
