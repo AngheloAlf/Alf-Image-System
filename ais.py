@@ -7,10 +7,11 @@
 ## v0.22 Added verify_integrity function
 ## v0.3 Add encript system
 ## v0.31 best command line encript system
-## v0.32 
+## v0.32 ais_main added
+## v0.33 AIS head creator function
 ##
 
-version = 0.32
+version = 0.33
 print "Loading Alf Image System..."
 import sys, os, Image
 
@@ -45,7 +46,7 @@ def get_RGB_list(imagen, inicio = (0,0), final = (0,0), seccion = False):
 	#pix[x,y] = value # Set the RGBA Value of the image (tuple)
 	return RGB
 
-def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_number = None):
+def create_ais_file(nombre,dim_imagen,nombre_destino = None,encript_number = None):
 	nombre = nombre.split(".")
 	if nombre_destino == None:
 		print "Saving file as: "+nombre[0]+".ais"
@@ -66,6 +67,16 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_numbe
 	ais_file.write(".".join(nombre)+"\n")
 	ais_file.write(formats["."+nombre[1]]+"\n")
 	ais_file.write(str(dim_imagen)[1:-1]+"\n")
+	ais_file.close()
+	return
+
+def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_number = None):
+	nombre = nombre.split(".")
+	if nombre_destino == None:
+		ais_file = open(nombre[0]+".ais","a")
+	else:
+		nombre_destino = nombre_destino.split(".")
+		ais_file = open(nombre_destino[0]+".ais","a")
 	if encript_number != None:
 		print "Encripting"
 		ais_file.write(str(encript_number)+"\n")
@@ -265,6 +276,7 @@ def ais_main(name = None, toname = None, arguments = []):
 	if extra_arguments["only-encript"] != None:
 		ais_data = read_ais_head(nombre)
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["only-encript"])
+		create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["only-encript"])
 		write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino, encript_number = extra_arguments["only-encript"])
 		exit()
 
@@ -288,10 +300,12 @@ def ais_main(name = None, toname = None, arguments = []):
 		imagen_cargada = open_image(nombre)
 		RGB = get_RGB_list(imagen_cargada)
 		if nombre_destino == None:
+			create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"])
 			write_ais_file(nombre, RGB, imagen_cargada.size,encript_number = extra_arguments["encript"])
 			if extra_arguments["verify"]:
 				verify_integrity(nombre,imagen_cargada.size,RGB,decript_number = extra_arguments["encript"])
 		else:
+			create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"])
 			write_ais_file(nombre, RGB, imagen_cargada.size,nombre_destino = nombre_destino,encript_number = extra_arguments["encript"])
 			if extra_arguments["verify"]:
 				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])

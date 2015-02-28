@@ -5,29 +5,27 @@ import random
 import sys
 
 x,y = None,None
-ais_file = open("Random.ais","w")
-ais_file.write(str(version)+"\n")
-ais_file.write("Alf Random Image System v"+str(version)+"\n")
-ais_file.write("Random.png"+"\n")
-ais_file.write("PNG"+"\n")
 for i in sys.argv[1:]:
-	if i[0:2] == "-x":
+	i = i.split("=")
+	if i[0] == "-x":
 		try:
-			x = str(int(i[2:]))
+			x = str(int(i[1]))
 		except:
 			print "Invalid x value"
-	if i[0:2] == "-y":
+	if i[0] == "-y":
 		try:
-			y = str(int(i[2:]))
+			y = str(int(i[1]))
 		except:
 			print "Invalid y value"
 if not x:
 	x = raw_input("x: ")
 if not y:
 	y = raw_input("y: ")
-ais_file.write(x+", "+y+"\n")
+create_ais_file("Random.png",(int(x),int(y)))
+ais_file = open("Random.ais","a")
 ais_file.write("ALF\n")
 print "Making Random Image "+x+"*"+y
+print "0.0%  completado"
 x = int(x)
 y = int(y)
 porcen = 0
@@ -52,5 +50,6 @@ for i in range(x):
 		porcen = porcen_act
 ais_file.close()
 
-ais_data,ais_pixels = open_ais_file("Random.ais")
+ais_data = read_ais_head("Random.ais")
+ais_pixels = open_ais_file("Random.ais",ais_data)
 create_image_file(ais_data[2],ais_data[4],ais_pixels,ais_data[3])
