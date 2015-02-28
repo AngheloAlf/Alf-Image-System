@@ -7,9 +7,10 @@
 ## v0.22 Added verify_integrity function
 ## v0.3 Add encript system
 ## v0.31 best command line encript system
+## v0.32 
 ##
 
-version = 0.31
+version = 0.32
 print "Loading Alf Image System..."
 import sys, os, Image
 
@@ -80,49 +81,61 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_numbe
 	print "Save successful"
 	return 
 
-def open_ais_file(nombre,decript_number=None):
+def read_ais_head(nombre):
 	try:
-		print "Loading AIS file: "+nombre
-		ais_file = open(nombre)
+	 	print "Loading AIS file: "+nombre
+	 	ais_file = open(nombre)
 	except:
 		print "AIS file not found"
 		exit()
 	ais_data = []
-	ais_pixels = []
-	inicio = True
-	encripted = False
 	for linea in ais_file:
-		if inicio:
-			ais_data.append(linea.strip())
-			if linea.strip() == "ALF":
-				ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
-				if ais_data[1][-1] == "e":
-					ais_data[5] = int(ais_data[5])
-					encripted = True
-				inicio = False
+		ais_data.append(linea.strip())
+		if linea.strip() == "ALF":
+			ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
+			if ais_data[1][-1] == "e":
+				ais_data[5] = int(ais_data[5])
+			break
+	return ais_data
+
+def open_ais_file(nombre,ais_data,decript_number=None):
+	try:
+		ais_file = open(nombre)
+	except:
+		print "AIS file not found"
+		exit()
+	ais_pixels = []
+	pixels = False
+	encripted = False
+	if ais_data[1][-1] == "e":
+		encripted = True
+	for linea in ais_file:
+		if linea.strip() == "ALF":
+			pixels = True
 			continue
-		if encripted:
-			if decript_number == None:
-				print "Error reading AIS file"
-				exit()
-			if decript_number != ais_data[5]:
-				print "Wrong decript code"
-				exit()
-			linea = de_encript(linea,decript_number)
-		fla = linea.strip().split("), ")
-		rgb_linea = []
-		for iteracion in fla:
-			#se que esto se puede hacer en una linea
-			#pero lo esta asi porque asi va a ser mas entendible
-			#si algun dia tengo que volver a leer lo que escribi aqui
-			iteracion = iteracion[1:].strip(")")
-			iteracion = iteracion.split(", ")
-			iteracion = map(int,iteracion)
-			iteracion = tuple(iteracion)
-			rgb_linea.append(iteracion)
-		ais_pixels.append(rgb_linea)
+		if pixels:
+			if encripted:
+				if decript_number == None:
+					print "Error reading AIS file"
+					exit()
+				if decript_number != ais_data[5]:
+					print "Wrong decript code"
+					exit()
+				linea = de_encript(linea,decript_number)
+			fla = linea.strip().split("), ")
+			rgb_linea = []
+			for iteracion in fla:
+				#se que esto se puede hacer en una linea
+				#pero lo esta asi porque asi va a ser mas entendible
+				#si algun dia tengo que volver a leer lo que escribi aqui
+				iteracion = iteracion[1:].strip(")")
+				iteracion = iteracion.split(", ")
+				iteracion = map(int,iteracion)
+				iteracion = tuple(iteracion)
+				rgb_linea.append(iteracion)
+			ais_pixels.append(rgb_linea)
 	ais_file.close()
-	return ais_data,ais_pixels
+	return ais_pixels
 
 def create_image_file(nombre,dim_imagen,ais_pixels,codificacion):
 	print "Creating image file as: "+nombre
@@ -132,66 +145,59 @@ def create_image_file(nombre,dim_imagen,ais_pixels,codificacion):
 		for y in range(dim_imagen[1]):
 			pix[x,y] = ais_pixels[x][y]
 	image_file.save(nombre, codificacion)
+	print "Save successful"
 	return
 
-def comands_arguments():
-	contador = 0
+def comands_arguments(arguments = []):
+	##Commands:
+	##"--name" or "-n" = name of the file
+	##"--toname" or "-tn" = name of the destiny filename
+	##"--verify" or "-v" = verify after the creation of the AIS file
+	##"--only-verify" or "-ov" = only verify the ais file with the image file and close the program
+	##"--do-nothing" or "-no" = do nothing
+	##"--encript" or "-e" = encript or decript the AIS file
+	##"--only-encript" or "-oe" = only encript or decript de AIS file
 	nombre = None
 	nombre_destino = None
-	Name = False
-	toName = False
+	arguments_list = sys.argv[1:] + arguments
 	extra_arguments = {"verify":False,"only-verify":False,"do-nothing":False,"encript": None,"only-encript":None}
-	for argument in sys.argv[1:]:
+	for argument in arguments_list:
 		good_argument = False
-		if contador == 0:
-			argument_line = argument.split(".")
+		argument = argument.split("=")
+		if argument[0] == "-n" or argument[0] == "--name":
+			argument_line = argument[1].split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
-				nombre = argument
-				Name = True
+				nombre = argument[1]
 				good_argument = True
-		if contador == 1 and Name:
-			argument_line = argument.split(".")
+		if argument[0] == "-tn" or argument[0] == "--toname":
+			argument_line = argument[1].split(".")
 			if len(argument_line)>1 and "."+argument_line[1] in formats:
-				if argument != nombre:
-					nombre_destino = argument
-					toName = True
+				if argument[1] != nombre:
+					nombre_destino = argument[1]
 					good_argument = True
-		if argument == "-v" or argument == "verify":
+		if argument[0] == "-v" or argument[0] == "--verify":
 			extra_arguments["verify"] = True
 			good_argument = True
-		if argument == "-ov" or argument == "only-verify":
+		if argument[0] == "-ov" or argument[0] == "--only-verify":
 			extra_arguments["only-verify"] = True
 			good_argument = True
-		if argument == "-no" or argument == "do-nothing" and true():
+		if argument[0] == "-no" or argument[0] == "--do-nothing" and true():
 			extra_arguments["do-nothing"] = True
 			good_argument = True
-		if argument[0:2] == "-e":
-			if len(argument)>2:
-				extra_arguments["encript"] = int(argument[2:])
+		if argument[0] == "-e" or argument[0] == "--encript":
+			if len(argument)>1:
+				extra_arguments["encript"] = int(argument[1])
 			else:
 				extra_arguments["encript"] = True
 			good_argument = True
-		if argument[0:7] == "encript":
-			if len(argument)>7:
-				extra_arguments["encript"] = int(argument[7:])
-			else:
-				extra_arguments["encript"] = True
-			good_argument = True
-		if argument[0:3] == "-oe":
-			if len(argument)>3:
-				extra_arguments["only-encript"] = int(argument[3:])
-			else:
-				extra_arguments["only-encript"] = True
-			good_argument = True
-		if argument == "only-encript":
-			if len(argument)>12:
-				extra_arguments["only-encript"] = int(argument[12:])
+		if argument[0] == "-oe" or argument[0] == "--only-encript":
+			if len(argument)>1:
+				extra_arguments["only-encript"] = int(argument[1])
 			else:
 				extra_arguments["only-encript"] = True
 			good_argument = True
 		if not good_argument:
-			print "The argument '"+ argument+ "' it's not a valid argument"
-		contador+=1
+			print "The argument '"+ argument[0]+ "' it's not a valid argument or you are using it wrong"
 	return nombre,nombre_destino,extra_arguments
 
 def true():
@@ -207,17 +213,23 @@ def false():
 		return True
 
 def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = None, only = False,decript_number = None):
-	print "Verifing integrity"
+	print "Loading files"
 	if only:
 		image = open_image(nombre)
 		RGB = get_RGB_list(image)
 		dim_imagen = image.size
 	if nombre_destino == None:
 		nombre_destino = nombre
-	ais_data,ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais",decript_number = decript_number)
+	ais_data = read_ais_head(nombre_destino.split(".")[0]+".ais")
+	ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais",ais_data,decript_number)
+	print "Verifing integrity"
 	print "Name: "+ str(ais_data[2] == nombre)
 	print "Image resolution: "+ str(ais_data[4] == dim_imagen)
 	print "Pixel per pixel verification: "+ str(ais_pixels == RGB)
+	if ais_data[2] == nombre and ais_data[4] == dim_imagen and ais_pixels == RGB:
+		print "Everything looks good :D"
+	else:
+		print "Something go wrong :c"
 	return
 
 def encript(linea,cod = 211):
@@ -232,14 +244,18 @@ def de_encript(linea,cod = 211):
 		decoded += str(chr(int(i)-cod))
 	return decoded
 
-print "Load done"
-
-if __name__== "__main__":
-	nombre,nombre_destino,extra_arguments = comands_arguments()
+def ais_main(name = None, toname = None, arguments = []):
+	nombre,nombre_destino,extra_arguments = comands_arguments(arguments)
 
 	if extra_arguments["do-nothing"]:
 		print "Doing Nothing"
 		exit()
+
+	if name != None:
+	 	nombre = name
+
+	if toname != None:
+	 	nombre_destino = toname
 
 	if extra_arguments["encript"] == True:
 		extra_arguments["encript"] = 211
@@ -247,11 +263,9 @@ if __name__== "__main__":
 		extra_arguments["only-encript"] = 211
 
 	if extra_arguments["only-encript"] != None:
-		ais_data,ais_pixels = open_ais_file(nombre,extra_arguments["only-encript"])
-		if ais_data[1][-1] == "e":
-			write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino)
-		else:
-			write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino, encript_number = extra_arguments["only-encript"])
+		ais_data = read_ais_head(nombre)
+		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["only-encript"])
+		write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino, encript_number = extra_arguments["only-encript"])
 		exit()
 
 	if extra_arguments["only-verify"]:
@@ -282,7 +296,8 @@ if __name__== "__main__":
 			if extra_arguments["verify"]:
 				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])
 	else:
-		ais_data,ais_pixels = open_ais_file(nombre,extra_arguments["encript"])
+		ais_data = read_ais_head(nombre)
+		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["encript"])
 		if nombre_destino != None:
 			if nombre_destino.split(".")[1].lower() != "ais":
 				codificacion = formats["."+nombre_destino.split(".")[1]]
@@ -293,5 +308,10 @@ if __name__== "__main__":
 			nombre_destino = ais_data[2]
 			codificacion = ais_data[3]
 		create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
+
+print "Load done"
+
+if __name__== "__main__":
+	ais_main()#"test.png",arguments=["-v"])
 
 #E.O.F End of file
