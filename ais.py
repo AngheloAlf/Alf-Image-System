@@ -9,37 +9,15 @@
 ## v0.31 best command line encript system
 ## v0.32 ais_main added
 ## v0.33 AIS head creator function
+## v0.34 add compativility with ais_commons
 ##
 
-version = 0.33
+version = 0.34
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
+formats = ais_commons.formats
 
-def create_ais_file(nombre,dim_imagen,nombre_destino = None,encript_number = None):
-	nombre = nombre.split(".")
-	if nombre_destino == None:
-		print "Saving file as: "+nombre[0]+".ais"
-		ais_file = open(nombre[0]+".ais","w")
-	else:
-		nombre_destino = nombre_destino.split(".")
-		if nombre_destino[1].lower() != "ais":
-			print "Can't convert image file to image file"
-			print "Converting to AIS file"
-			print "If you want to convert image file to image file, use a normal image editor"
-		print "Saving file as: "+nombre_destino[0]+".ais"
-		ais_file = open(nombre_destino[0]+".ais","w")
-	ais_file.write(str(version)+"\n")
-	if encript_number == None:
-		ais_file.write("Alf Image System v"+str(version)+"\n")
-	else:
-		ais_file.write("Alf Image System v"+str(version)+"e\n")
-	ais_file.write(".".join(nombre)+"\n")
-	ais_file.write(formats["."+nombre[1]]+"\n")
-	ais_file.write(str(dim_imagen)[1:-1]+"\n")
-	ais_file.close()
-	return
-
-def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_number = None):
+def write_ais_file(nombre, RGB, nombre_destino = None, encript_number = None):
 	nombre = nombre.split(".")
 	if nombre_destino == None:
 		ais_file = open(nombre[0]+".ais","a")
@@ -55,28 +33,11 @@ def write_ais_file(nombre, RGB, dim_imagen, nombre_destino = None, encript_numbe
 		if encript_number == None:
 			ais_file.write(i)
 		else:
-			ais_file.write(encript(i,encript_number))
+			ais_file.write(ais_commons.encript(i,encript_number))
 		ais_file.write("\n")
 	ais_file.close()
 	print "Save successful"
 	return 
-
-def read_ais_head(nombre):
-	try:
-	 	print "Loading AIS file: "+nombre
-	 	ais_file = open(nombre)
-	except:
-		print "AIS file not found"
-		exit()
-	ais_data = []
-	for linea in ais_file:
-		ais_data.append(linea.strip())
-		if linea.strip() == "ALF":
-			ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
-			if ais_data[1][-1] == "e":
-				ais_data[5] = int(ais_data[5])
-			break
-	return ais_data
 
 def open_ais_file(nombre,ais_data,decript_number=None):
 	try:
@@ -101,7 +62,7 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 				if decript_number != ais_data[5]:
 					print "Wrong decript code"
 					exit()
-				linea = de_encript(linea,decript_number)
+				linea = ais_commons.de_encript(linea,decript_number)
 			fla = linea.strip().split("), ")
 			rgb_linea = []
 			for iteracion in fla:
@@ -136,7 +97,7 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 		dim_imagen = image.size
 	if nombre_destino == None:
 		nombre_destino = nombre
-	ais_data = read_ais_head(nombre_destino.split(".")[0]+".ais")
+	ais_data = ais_commons.read_ais_head(nombre_destino.split(".")[0]+".ais")
 	ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais",ais_data,decript_number)
 	print "Verifing integrity"
 	print "Name: "+ str(ais_data[2] == nombre)
@@ -148,19 +109,7 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 		print "Something go wrong :c"
 	return
 
-def encript(linea,cod = 211):
-	coded = []
-	for i in linea:
-		coded.append(str(ord(i)+cod))
-	return ".".join(coded)
-
-def de_encript(linea,cod = 211):
-	decoded = ""
-	for i in linea.split("."):
-		decoded += str(chr(int(i)-cod))
-	return decoded
-
-def ais_main(name = None, toname = None, arguments = []):
+def ais_main_v0_x(name = None, toname = None, arguments = []):
 	nombre,nombre_destino,extra_arguments = ais_commons.comands_arguments(arguments)
 
 	if extra_arguments["do-nothing"]:
@@ -179,10 +128,10 @@ def ais_main(name = None, toname = None, arguments = []):
 		extra_arguments["only-encript"] = 211
 
 	if extra_arguments["only-encript"] != None:
-		ais_data = read_ais_head(nombre)
+		ais_data = ais_commons.read_ais_head(nombre)
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["only-encript"])
-		create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["only-encript"])
-		write_ais_file(ais_data[2], ais_pixels, ais_data[4], nombre_destino, encript_number = extra_arguments["only-encript"])
+		ais_commons.create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["only-encript"],version)
+		write_ais_file(ais_data[2], ais_pixels, nombre_destino, encript_number = extra_arguments["only-encript"])
 		exit()
 
 	if extra_arguments["only-verify"]:
@@ -204,18 +153,12 @@ def ais_main(name = None, toname = None, arguments = []):
 	if "."+nombre.split(".")[1].lower() != ".ais":
 		imagen_cargada = ais_commons.open_image(nombre)
 		RGB = ais_commons.get_RGB_list(imagen_cargada)
-		if nombre_destino == None:
-			create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"])
-			write_ais_file(nombre, RGB, imagen_cargada.size,encript_number = extra_arguments["encript"])
-			if extra_arguments["verify"]:
-				verify_integrity(nombre,imagen_cargada.size,RGB,decript_number = extra_arguments["encript"])
-		else:
-			create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"])
-			write_ais_file(nombre, RGB, imagen_cargada.size,nombre_destino = nombre_destino,encript_number = extra_arguments["encript"])
-			if extra_arguments["verify"]:
-				verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])
+		ais_commons.create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"],version)
+		write_ais_file(nombre, RGB, nombre_destino = nombre_destino,encript_number = extra_arguments["encript"])
+		if extra_arguments["verify"]:
+			verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])
 	else:
-		ais_data = read_ais_head(nombre)
+		ais_data = ais_commons.read_ais_head(nombre)
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["encript"])
 		if nombre_destino != None:
 			if nombre_destino.split(".")[1].lower() != "ais":
@@ -231,6 +174,6 @@ def ais_main(name = None, toname = None, arguments = []):
 print "Load done"
 
 if __name__== "__main__":
-	ais_main()#"test.png",arguments=["-v"])
+	ais_main_v0_x()#"test.png",arguments=["-v"])
 
 #E.O.F End of file
