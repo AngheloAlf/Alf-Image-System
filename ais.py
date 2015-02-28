@@ -45,6 +45,9 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 	except:
 		print "AIS file not found"
 		exit()
+	if ais_data[0]>=1.0:
+		print "This AIS file it's not compatible with this software, please update"
+		exit()
 	ais_pixels = []
 	pixels = False
 	encripted = False

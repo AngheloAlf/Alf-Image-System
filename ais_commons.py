@@ -3,6 +3,7 @@
 ## History:
 ## v0.1 First version
 ## v0.11 More functions
+## v0.12 little change 
 ##
 
 version_commons = 0.11
@@ -75,6 +76,7 @@ def read_ais_head(nombre):
 		ais_data.append(linea.strip())
 		if linea.strip() == "ALF":
 			ais_data[4] = tuple(map(int,ais_data[4].split(", ")))
+			ais_data[0] = float(ais_data[0])
 			if ais_data[1][-1] == "e":
 				ais_data[5] = int(ais_data[5])
 			break
