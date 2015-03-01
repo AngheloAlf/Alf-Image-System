@@ -4,10 +4,11 @@
 ## v0.1 First version
 ## v0.11 More functions
 ## v0.12 little change 
-## v0.2 add resolve_name()
-##
+## v0.2 add def resolve_name()
+## v0.3 change how work def comands_arguments()
+## 
 
-version_commons = 0.2
+version_commons = 0.3
 print "Loading Commons v"+str(version_commons)+" ..."
 import sys, os, Image
 
@@ -84,6 +85,11 @@ def read_ais_head(nombre):
 	return ais_data
 
 def comands_arguments(arguments = []):
+	def resolve_commands(valor):
+		extra_arguments[valor] = True
+		if len(argument)>1:
+			extra_arguments[valor] = argument[1]
+		return 
 	##Commands:
 	##"--name" or "-n" = name of the file
 	##"--toname" or "-tn" = name of the destiny filename
@@ -92,55 +98,29 @@ def comands_arguments(arguments = []):
 	##"--do-nothing" or "-no" = do nothing
 	##"--encript" or "-e" = encript or decript the AIS file
 	##"--only-encript" or "-oe" = only encript or decript de AIS file
-	nombre = None
-	nombre_destino = None
+	##"-x" to give x
+	##"-y" to give y
 	arguments_list = sys.argv[1:] + arguments
-	extra_arguments = {"verify":False,"only-verify":False,"do-nothing":False,"encript": None,"only-encript":None,"-x":None,"-y":None}
+	extra_arguments = {"-n":None, "-tn":None, "-v":False, "-ov":False, "-no":False, 
+	"-e": None, "-oe":None, "-x":None, "-y":None}
+	alloweds_commands = {"--name":"-n", "--toname":"-tn", "--verify":"-v", 
+	"--only-verify": "-ov", "--do-nothing":"-no", "--encript":"-e", 
+	"--only-encript": "-oe", "-x":"-x", "-y":"-y"}
 	for argument in arguments_list:
 		good_argument = False
 		argument = argument.split("=")
-		if argument[0] == "-n" or argument[0] == "--name":
-			argument_line = argument[1].split(".")
-			if len(argument_line)>1 and "."+argument_line[1] in formats:
-				nombre = argument[1]
-				good_argument = True
-		if argument[0] == "-tn" or argument[0] == "--toname":
-			argument_line = argument[1].split(".")
-			if len(argument_line)>1 and "."+argument_line[1] in formats:
-				if argument[1] != nombre:
-					nombre_destino = argument[1]
-					good_argument = True
-		if argument[0] == "-v" or argument[0] == "--verify":
-			extra_arguments["verify"] = True
+
+		if argument[0] in alloweds_commands:
+			resolve_commands(alloweds_commands[argument[0]])
 			good_argument = True
-		if argument[0] == "-ov" or argument[0] == "--only-verify":
-			extra_arguments["only-verify"] = True
+
+		if argument[0] in alloweds_commands.values():
+			resolve_commands(argument[0])
 			good_argument = True
-		if argument[0] == "-no" or argument[0] == "--do-nothing":
-			extra_arguments["do-nothing"] = True
-			good_argument = True
-		if argument[0] == "-e" or argument[0] == "--encript":
-			if len(argument)>1:
-				extra_arguments["encript"] = int(argument[1])
-			else:
-				extra_arguments["encript"] = True
-			good_argument = True
-		if argument[0] == "-oe" or argument[0] == "--only-encript":
-			if len(argument)>1:
-				extra_arguments["only-encript"] = int(argument[1])
-			else:
-				extra_arguments["only-encript"] = True
-			good_argument = True
-		if argument[0] == "-x":
-			extra_arguments["-x"] = argument[1]
-			good_argument = True
-		if argument[0] == "-y":
-			print argument
-			extra_arguments["-y"] = argument[1]
-			good_argument = True
+
 		if not good_argument:
 			print "The argument '"+ argument[0]+ "' it's not a valid argument or you are using it wrong"
-	return nombre,nombre_destino,extra_arguments
+	return extra_arguments
 
 def encript(linea,cod = 211):
 	coded = []
@@ -154,7 +134,13 @@ def de_encript(linea,cod = 211):
 		decoded += str(chr(int(i)-cod))
 	return decoded
 
-def resolve_name(nombre,nombre_destino,name,toname):
+def resolve_name(name,toname,extra_arguments):
+	nombre,nombre_destino = None,None
+	if type(extra_arguments["-n"]) == str:
+		nombre = extra_arguments["-n"]
+	if type(extra_arguments["-tn"]) == str:
+		nombre_destino = extra_arguments["-tn"]
+
 	if name:
 		nombre = name
 	if toname:

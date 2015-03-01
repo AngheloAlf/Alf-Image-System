@@ -11,9 +11,10 @@
 ## v0.33 AIS head creator function
 ## v0.34 add compativility with ais_commons
 ## v0.35 add compativility with ais_commons.resolve_name
-## 
+## v0.36 Update to match how work ais_commons functions
+##
 
-version = 0.35
+version = 0.36
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
@@ -114,47 +115,51 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 	return
 
 def ais_main_v0_x(name = None, toname = None, arguments = []):
-	nombre,nombre_destino,extra_arguments = ais_commons.comands_arguments(arguments)
+	extra_arguments = ais_commons.comands_arguments(arguments)
+	
+	if extra_arguments["-no"]:
+		print "Doing nothing"
+		return 0
+	nombre, nombre_destino = ais_commons.resolve_name(name,toname,extra_arguments)
 
-	if extra_arguments["do-nothing"]:
-		print "Doing Nothing"
-		exit()
+	if extra_arguments["-e"] == True:
+		extra_arguments["-e"] = 211
+	if extra_arguments["-oe"]== True:
+		extra_arguments["-oe"] = 211
 
-	nombre, nombre_destino = ais_commons.resolve_name(nombre,nombre_destino,name,toname)
-
-	if extra_arguments["encript"] == True:
-		extra_arguments["encript"] = 211
-	if extra_arguments["only-encript"]== True:
-		extra_arguments["only-encript"] = 211
-
-	if extra_arguments["only-encript"] != None:
+	if extra_arguments["-oe"] != None:
 		ais_data = ais_commons.read_ais_head(nombre)
-		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["only-encript"])
-		ais_commons.create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["only-encript"],version)
-		write_ais_file(ais_data[2], ais_pixels, nombre_destino, encript_number = extra_arguments["only-encript"])
-		exit()
+		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["-oe"])
+		ais_commons.create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["-oe"],version)
+		write_ais_file(ais_data[2], ais_pixels, nombre_destino, encript_number = extra_arguments["-oe"])
+		return 0
 
-	if extra_arguments["only-verify"]:
+	if extra_arguments["-ov"]:
 		if nombre and nombre_destino:
-			verify_integrity(nombre,nombre_destino = nombre_destino,only = True,decript_number = extra_arguments["encript"])
+			verify_integrity(nombre,nombre_destino = nombre_destino,only = True,decript_number = extra_arguments["-e"])
+			return 0
 		else:
 			print "You have to put an name and an destiny name to verify integrity"
-		exit()
+			return 2
 
+	try:
+		nombre.split(".")[1]
+	except:
+		return 3
 	if "."+nombre.split(".")[1].lower() not in formats:
 		print "The file is not an image"
-		exit()
+		return 1
 
 	if "."+nombre.split(".")[1].lower() != ".ais":
 		imagen_cargada = ais_commons.open_image(nombre)
 		RGB = ais_commons.get_RGB_list(imagen_cargada)
-		ais_commons.create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["encript"],version)
-		write_ais_file(nombre, RGB, nombre_destino = nombre_destino,encript_number = extra_arguments["encript"])
-		if extra_arguments["verify"]:
-			verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["encript"])
+		ais_commons.create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["-e"],version)
+		write_ais_file(nombre, RGB, nombre_destino = nombre_destino,encript_number = extra_arguments["-e"])
+		if extra_arguments["-v"]:
+			verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["-e"])
 	else:
 		ais_data = ais_commons.read_ais_head(nombre)
-		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["encript"])
+		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["-e"])
 		if nombre_destino != None:
 			if nombre_destino.split(".")[1].lower() != "ais":
 				codificacion = formats["."+nombre_destino.split(".")[1]]
@@ -165,10 +170,12 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 			nombre_destino = ais_data[2]
 			codificacion = ais_data[3]
 		create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
+	return 0
 
 print "Load done"
 
 if __name__== "__main__":
-	ais_main_v0_x()#"test.png",arguments=["-v"])
-
+	error = ais_main_v0_x()
+	if error:
+		print "The program has finished with error code "+str(error)
 #E.O.F End of file

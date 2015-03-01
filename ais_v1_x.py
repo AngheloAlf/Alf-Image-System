@@ -2,10 +2,11 @@
 ##
 ## History:
 ## v1.0 indev
-## v1.01 
+## v1.01 filename can be set by command line or by screen now
+## v1.02 Update to match how work ais_commons functions
 ## 
 
-version = 1.01
+version = 1.02
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
@@ -72,9 +73,8 @@ def create_image(nombre, ais_data,ais_pixels):
 	return
 
 def ais_main_1_x(name = None, toname = None, arguments = []):
-	nombre,nombre_destino,extra_arguments = ais_commons.comands_arguments(arguments)
-
-	nombre, nombre_destino = ais_commons.resolve_name(nombre,nombre_destino,name,toname)
+	extra_arguments = ais_commons.comands_arguments(arguments)
+	nombre, nombre_destino = ais_commons.resolve_name(name,toname,extra_arguments)
 
 	if nombre.split(".")[1]!="ais":
 		image = ais_commons.open_image(nombre)

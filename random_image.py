@@ -2,7 +2,7 @@
 
 import random, sys, ais_commons, ais_v0_x
 
-extra_arguments = ais_commons.comands_arguments()[2]
+extra_arguments = ais_commons.comands_arguments()
 x,y = extra_arguments["-x"],extra_arguments["-y"]
 if not x:
 	x = raw_input("x: ")
