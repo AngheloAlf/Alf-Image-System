@@ -12,9 +12,10 @@
 ## v0.34 add compativility with ais_commons
 ## v0.35 add compativility with ais_commons.resolve_name
 ## v0.36 Update to match how work ais_commons functions
+## v0.361 little clean up
 ##
 
-version = 0.36
+version = 0.361
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
@@ -47,9 +48,11 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 	except:
 		print "AIS file not found"
 		exit()
+		return 4
 	if ais_data[0]>=1.0:
 		print "This AIS file it's not compatible with this software, please update"
 		exit()
+		return 5
 	ais_pixels = []
 	pixels = False
 	encripted = False
@@ -64,9 +67,11 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 				if decript_number == None:
 					print "Error reading AIS file"
 					exit()
+					return 4
 				if decript_number != ais_data[5]:
 					print "Wrong decript code"
 					exit()
+					return 6
 				linea = ais_commons.de_encript(linea,decript_number)
 			fla = linea.strip().split("), ")
 			rgb_linea = []
@@ -131,7 +136,7 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 		ais_data = ais_commons.read_ais_head(nombre)
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["-oe"])
 		ais_commons.create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["-oe"],version)
-		write_ais_file(ais_data[2], ais_pixels, nombre_destino, encript_number = extra_arguments["-oe"])
+		write_ais_file(ais_data[2], ais_pixels, nombre_destino, extra_arguments["-oe"])
 		return 0
 
 	if extra_arguments["-ov"]:
@@ -154,7 +159,7 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 		imagen_cargada = ais_commons.open_image(nombre)
 		RGB = ais_commons.get_RGB_list(imagen_cargada)
 		ais_commons.create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["-e"],version)
-		write_ais_file(nombre, RGB, nombre_destino = nombre_destino,encript_number = extra_arguments["-e"])
+		write_ais_file(nombre, RGB, nombre_destino, extra_arguments["-e"])
 		if extra_arguments["-v"]:
 			verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["-e"])
 	else:

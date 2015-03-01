@@ -7,9 +7,10 @@
 ## v0.2 add def resolve_name()
 ## v0.3 change how work def comands_arguments()
 ## v0.301 litte change
+## v0.302 update resolve_name() function
 ##
 
-version_commons = 0.301
+version_commons = 0.302
 print "Loading Commons v"+str(version_commons)+" ..."
 import sys, os, Image
 
@@ -22,7 +23,8 @@ def open_image(nombre):
 	except:
 		print "Error loading the image"
 		exit()
-		return None
+		return 4
+	return None
 
 def get_RGB_list(imagen, inicio = (0,0), final = (0,0), seccion = False):
 	print "Loading RGB"
@@ -74,6 +76,7 @@ def read_ais_head(nombre):
 	except:
 		print "AIS file not found"
 		exit()
+		return 4
 	ais_data = []
 	for linea in ais_file:
 		ais_data.append(linea.strip())
@@ -157,6 +160,10 @@ def resolve_name(name,toname,extra_arguments):
 			nombre_destino = raw_input("Destiny filename (leave blank to autoname): ")
 			if nombre_destino == "":
 				nombre_destino = None
+
+	if nombre and nombre_destino:
+		if nombre.split(".")[1] == nombre_destino.split(".")[1]:
+			nombre_destino = None
 
 	return nombre, nombre_destino
 
