@@ -10,9 +10,10 @@
 ## v0.32 ais_main added
 ## v0.33 AIS head creator function
 ## v0.34 add compativility with ais_commons
-##
+## v0.35 add compativility with ais_commons.resolve_name
+## 
 
-version = 0.34
+version = 0.35
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
@@ -119,11 +120,7 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 		print "Doing Nothing"
 		exit()
 
-	if name != None:
-	 	nombre = name
-
-	if toname != None:
-	 	nombre_destino = toname
+	nombre, nombre_destino = ais_commons.resolve_name(nombre,nombre_destino,name,toname)
 
 	if extra_arguments["encript"] == True:
 		extra_arguments["encript"] = 211
@@ -144,11 +141,6 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 			print "You have to put an name and an destiny name to verify integrity"
 		exit()
 
-	if nombre == None:
-		nombre = raw_input("Filename: ")
-		nombre_destino = raw_input("Destiny filename (leave blank to autoname): ")
-		if nombre_destino == "":
-			nombre_destino = None
 	if "."+nombre.split(".")[1].lower() not in formats:
 		print "The file is not an image"
 		exit()

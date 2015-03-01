@@ -2,9 +2,10 @@
 ##
 ## History:
 ## v1.0 indev
-##
+## v1.01 
+## 
 
-version = 1.0
+version = 1.01
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
@@ -70,8 +71,11 @@ def create_image(nombre, ais_data,ais_pixels):
 	image_file.save(nombre, ais_data[3])
 	return
 
-def ais_main_1_x():
-	nombre = "alf.ais"
+def ais_main_1_x(name = None, toname = None, arguments = []):
+	nombre,nombre_destino,extra_arguments = ais_commons.comands_arguments(arguments)
+
+	nombre, nombre_destino = ais_commons.resolve_name(nombre,nombre_destino,name,toname)
+
 	if nombre.split(".")[1]!="ais":
 		image = ais_commons.open_image(nombre)
 		RGB = ais_commons.get_RGB_list(image)

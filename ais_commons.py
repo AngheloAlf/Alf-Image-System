@@ -4,9 +4,10 @@
 ## v0.1 First version
 ## v0.11 More functions
 ## v0.12 little change 
+## v0.2 add resolve_name()
 ##
 
-version_commons = 0.11
+version_commons = 0.2
 print "Loading Commons v"+str(version_commons)+" ..."
 import sys, os, Image
 
@@ -152,6 +153,21 @@ def de_encript(linea,cod = 211):
 	for i in linea.split("."):
 		decoded += str(chr(int(i)-cod))
 	return decoded
+
+def resolve_name(nombre,nombre_destino,name,toname):
+	if name:
+		nombre = name
+	if toname:
+		nombre_destino = toname
+
+	if not nombre:
+		nombre = raw_input("Filename: ")
+		if not nombre_destino:
+			nombre_destino = raw_input("Destiny filename (leave blank to autoname): ")
+			if nombre_destino == "":
+				nombre_destino = None
+
+	return nombre, nombre_destino
 
 print "Commons loading done"
 
