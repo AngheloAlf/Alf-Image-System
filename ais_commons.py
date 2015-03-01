@@ -6,9 +6,10 @@
 ## v0.12 little change 
 ## v0.2 add def resolve_name()
 ## v0.3 change how work def comands_arguments()
-## 
+## v0.301 litte change
+##
 
-version_commons = 0.3
+version_commons = 0.301
 print "Loading Commons v"+str(version_commons)+" ..."
 import sys, os, Image
 
@@ -123,12 +124,16 @@ def comands_arguments(arguments = []):
 	return extra_arguments
 
 def encript(linea,cod = 211):
+	if cod == True:
+		cod = 211
 	coded = []
 	for i in linea:
 		coded.append(str(ord(i)+cod))
 	return ".".join(coded)
 
 def de_encript(linea,cod = 211):
+	if cod == True:
+		cod = 211
 	decoded = ""
 	for i in linea.split("."):
 		decoded += str(chr(int(i)-cod))
