@@ -8,23 +8,26 @@
 ## v0.3 change how work def comands_arguments()
 ## v0.301 litte change
 ## v0.302 update resolve_name() function
+## v0.31 Add errors codes
 ##
 
-version_commons = 0.302
+version_commons = 0.4
 print "Loading Commons v"+str(version_commons)+" ..."
 import sys, os, Image
 
 formats = {".bmp": "BMP",".gif":"GIF",".jfif":"JPEG",".jpe":"JPEG",".jpg":"JPEG",".jpg":"JPEG",".png":"PNG",".pbm":"PPM",".pgm":"PPM",".ppm":"PPM",".ais":"AIS"}
+errors_codes = {1:"The filename isn't an image", 2:"You have to put an name and an destiny name to verify integrity", 
+3:"The name or the destiny name it's not valid", 4:"File not found",
+5:"This AIS file it's not compatible with this software, please get the correct version",
+6:"Wrong decript code", 7:"Error reading AIS file"}
 
 def open_image(nombre):
 	try:
 		print "Loading image file: "+nombre
 		return Image.open(os.path.join(nombre))
 	except:
-		print "Error loading the image"
-		exit()
 		return 4
-	return None
+	return 4
 
 def get_RGB_list(imagen, inicio = (0,0), final = (0,0), seccion = False):
 	print "Loading RGB"
@@ -74,8 +77,6 @@ def read_ais_head(nombre):
 	 	print "Loading AIS file: "+nombre
 	 	ais_file = open(nombre)
 	except:
-		print "AIS file not found"
-		exit()
 		return 4
 	ais_data = []
 	for linea in ais_file:
@@ -161,9 +162,22 @@ def resolve_name(name,toname,extra_arguments):
 			if nombre_destino == "":
 				nombre_destino = None
 
+	try:
+		nombre.split(".")[1]
+	except:
+		return 3,3
+	if nombre_destino:
+		try:
+			nombre_destino.split(".")[1]
+		except:
+			return 3,3
+
 	if nombre and nombre_destino:
 		if nombre.split(".")[1] == nombre_destino.split(".")[1]:
 			nombre_destino = None
+
+	if "."+nombre.split(".")[1].lower() not in formats:
+		return 1,1
 
 	return nombre, nombre_destino
 

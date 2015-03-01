@@ -6,12 +6,14 @@
 ## v1.02 Update to match how work ais_commons functions
 ## v1.1 add encript system
 ## v1.101 Update to match how work ais_commons functions // nombre & nombre_destino
+## v1.2 Add errors codes
 ##
 
-version = 1.101
+version = 1.2
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
+errors_codes = ais_commons.errors_codes
 
 def get_color_pixels(RGB):
 	pixels = {}
@@ -55,12 +57,8 @@ def get_ais_pixels(nombre, ais_data, encript_number = False):
 	try:
 		ais_file = open(nombre)
 	except:
-		print "AIS file not found"
-		exit()
 		return 4
 	if ais_data[0]<1.0:
-		print "This AIS file it's not compatible with this software, please get the correct version"
-		exit()
 		return 5
 	ais_pixels = {}
 	pixel = False
@@ -95,18 +93,28 @@ def create_image(nombre, ais_data,ais_pixels, nombre_destino = None):
 
 def ais_main_1_x(name = None, toname = None, arguments = []):
 	extra_arguments = ais_commons.comands_arguments(arguments)
+	if extra_arguments["-no"]:
+		print "Doing nothing"
+		return 0
 	nombre, nombre_destino = ais_commons.resolve_name(name,toname,extra_arguments)
 
 	if nombre.split(".")[1]!="ais":
 		image = ais_commons.open_image(nombre)
+		if type(image) == int:
+			return image
 		RGB = ais_commons.get_RGB_list(image)
 		pixels = get_color_pixels(RGB)
 		ais_commons.create_ais_file(nombre, image.size, nombre_destino,current_version = version)
 		write_ais_pixels(nombre, pixels, nombre_destino)
 	else:
 		ais_data = ais_commons.read_ais_head(nombre)
+		if type(ais_data) == int:
+			return ais_data
 		ais_pixels = get_ais_pixels(nombre, ais_data)
+		if type(ais_pixels) == int:
+			return ais_pixels
 		create_image(ais_data[2], ais_data, ais_pixels, nombre_destino)
+
 	return 0
 
 print "AIS v"+str(version)+" loading done"
@@ -115,5 +123,6 @@ if __name__ == "__main__":
 	error = ais_main_1_x()
 	if error:
 		print "The program has finished with error code "+str(error)
+		print errors_codes[error]
 
 #E.O.F End of file

@@ -13,12 +13,14 @@
 ## v0.35 add compativility with ais_commons.resolve_name
 ## v0.36 Update to match how work ais_commons functions
 ## v0.361 little clean up
+## v0.4 Add errors codes
 ##
 
-version = 0.361
+version = 0.4
 print "Loading Alf Image System v"+str(version)+" ..."
 import sys, os, Image, ais_commons
 formats = ais_commons.formats
+errors_codes = ais_commons.errors_codes
 
 def write_ais_file(nombre, RGB, nombre_destino = None, encript_number = None):
 	nombre = nombre.split(".")
@@ -46,12 +48,8 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 	try:
 		ais_file = open(nombre)
 	except:
-		print "AIS file not found"
-		exit()
 		return 4
 	if ais_data[0]>=1.0:
-		print "This AIS file it's not compatible with this software, please update"
-		exit()
 		return 5
 	ais_pixels = []
 	pixels = False
@@ -65,12 +63,8 @@ def open_ais_file(nombre,ais_data,decript_number=None):
 		if pixels:
 			if encripted:
 				if decript_number == None:
-					print "Error reading AIS file"
-					exit()
-					return 4
+					return 7
 				if decript_number != ais_data[5]:
-					print "Wrong decript code"
-					exit()
 					return 6
 				linea = ais_commons.de_encript(linea,decript_number)
 			fla = linea.strip().split("), ")
@@ -103,12 +97,18 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 	print "Loading files"
 	if only:
 		image = ais_commons.open_image(nombre)
+		if type(image) == int:
+			return image
 		RGB = ais_commons.get_RGB_list(image)
 		dim_imagen = image.size
 	if nombre_destino == None:
 		nombre_destino = nombre
 	ais_data = ais_commons.read_ais_head(nombre_destino.split(".")[0]+".ais")
+	if type(ais_data) == int:
+		return ais_data
 	ais_pixels = open_ais_file(nombre_destino.split(".")[0]+".ais",ais_data,decript_number)
+	if type(ais_pixels) == int:
+		return ais_pixels
 	print "Verifing integrity"
 	print "Name: "+ str(ais_data[2] == nombre)
 	print "Image resolution: "+ str(ais_data[4] == dim_imagen)
@@ -117,15 +117,17 @@ def verify_integrity(nombre, dim_imagen = None, RGB = None, nombre_destino = Non
 		print "Everything looks good :D"
 	else:
 		print "Something go wrong :c"
-	return
+	return 0
 
 def ais_main_v0_x(name = None, toname = None, arguments = []):
 	extra_arguments = ais_commons.comands_arguments(arguments)
-	
 	if extra_arguments["-no"]:
 		print "Doing nothing"
 		return 0
 	nombre, nombre_destino = ais_commons.resolve_name(name,toname,extra_arguments)
+
+	if type(nombre) == int:
+		return nombre 
 
 	if extra_arguments["-e"] == True:
 		extra_arguments["-e"] = 211
@@ -134,29 +136,26 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 
 	if extra_arguments["-oe"] != None:
 		ais_data = ais_commons.read_ais_head(nombre)
+		if type(ais_data) == int:
+			return ais_data
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["-oe"])
+		if type(ais_pixels) == int:
+			return ais_pixels
 		ais_commons.create_ais_file(nombre,ais_data[4],nombre_destino,extra_arguments["-oe"],version)
 		write_ais_file(ais_data[2], ais_pixels, nombre_destino, extra_arguments["-oe"])
 		return 0
 
 	if extra_arguments["-ov"]:
 		if nombre and nombre_destino:
-			verify_integrity(nombre,nombre_destino = nombre_destino,only = True,decript_number = extra_arguments["-e"])
-			return 0
+			error = verify_integrity(nombre,nombre_destino = nombre_destino,only = True,decript_number = extra_arguments["-e"])
+			return error
 		else:
-			print "You have to put an name and an destiny name to verify integrity"
 			return 2
-
-	try:
-		nombre.split(".")[1]
-	except:
-		return 3
-	if "."+nombre.split(".")[1].lower() not in formats:
-		print "The file is not an image"
-		return 1
 
 	if "."+nombre.split(".")[1].lower() != ".ais":
 		imagen_cargada = ais_commons.open_image(nombre)
+		if type(imagen_cargada) == int:
+			return imagen_cargada
 		RGB = ais_commons.get_RGB_list(imagen_cargada)
 		ais_commons.create_ais_file(nombre,imagen_cargada.size,nombre_destino,extra_arguments["-e"],version)
 		write_ais_file(nombre, RGB, nombre_destino, extra_arguments["-e"])
@@ -164,7 +163,12 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 			verify_integrity(nombre,imagen_cargada.size,RGB,nombre_destino,decript_number = extra_arguments["-e"])
 	else:
 		ais_data = ais_commons.read_ais_head(nombre)
+		if type(ais_data) == int:
+			return ais_data
 		ais_pixels = open_ais_file(nombre,ais_data,extra_arguments["-e"])
+		if type(ais_pixels) == int:
+			return ais_pixels
+
 		if nombre_destino != None:
 			if nombre_destino.split(".")[1].lower() != "ais":
 				codificacion = formats["."+nombre_destino.split(".")[1]]
@@ -175,6 +179,7 @@ def ais_main_v0_x(name = None, toname = None, arguments = []):
 			nombre_destino = ais_data[2]
 			codificacion = ais_data[3]
 		create_image_file(nombre_destino,ais_data[4],ais_pixels,codificacion)
+
 	return 0
 
 print "Load done"
@@ -183,4 +188,6 @@ if __name__== "__main__":
 	error = ais_main_v0_x()
 	if error:
 		print "The program has finished with error code "+str(error)
+		print "-- "+errors_codes[error]+" --"
+
 #E.O.F End of file
